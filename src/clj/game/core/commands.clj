@@ -1,7 +1,7 @@
 (ns game.core.commands
   (:require
     [game.core.board :refer [all-installed get-zones server->zone]]
-    [game.core.card :refer [agenda? can-be-advanced? corp? get-card has-subtype? ice? identity? in-hand? installed? map->Card rezzed? runner?]]
+    [game.core.card :refer [agenda? event? can-be-advanced? corp? get-card has-subtype? ice? identity? in-hand? installed? map->Card operation? rezzed? runner?]]
     [game.core.damage :refer [damage]]
     [game.core.drawing :refer [draw]]
     [game.core.eid :refer [effect-completed make-eid]]
@@ -82,7 +82,8 @@
                    {:prompt "Select a card to install facedown"
                     :choices {:card #(and (runner? %)
                                           (in-hand? %))}
-                    :effect (effect (runner-install target {:facedown true}))}
+                    :async true
+                    :effect (effect (runner-install eid target {:facedown true}))}
                    (map->Card {:title "/faceup command"}) nil))
 
 (defn command-counter [state side args]
@@ -177,6 +178,24 @@
     (swap! state dissoc-in [side :selected])
     (effect-completed state side (:eid fprompt))))
 
+(defn command-install
+  [state side]
+  (resolve-ability
+    state side
+    {:waiting-prompt (str (if (= :corp side) "Corp" "Runner")
+                          " to install a card from hand")
+     :prompt "Select a card in hand to install"
+     :choices {:card #(and (in-hand? %)
+                           (not (event? %))
+                           (not (operation? %)))}
+     :msg (msg "install " (:title card))
+     :async true
+     :effect (req (if (= :corp side)
+                    (corp-install state :corp eid target nil nil)
+                    (runner-install state :runner eid target nil)))}
+    (map->Card {:title "/install command" :side side})
+    nil))
+
 (defn command-install-ice
   [state side]
   (when (= side :corp)
@@ -185,6 +204,7 @@
       {:prompt "Select a piece of ice to install"
        :choices {:card #(and (ice? %)
                              (#{[:hand]} (:zone %)))}
+       :async true
        :effect (effect
                  (continue-ability
                    (let [chosen-ice target]
@@ -273,7 +293,8 @@
     (resolve-ability
       state side
       {:prompt "Select a card to trash"
-       :choices {:card #(f %)}
+       :choices {:card f}
+       :async true
        :effect (effect (trash eid target {:unpreventable true}))}
       nil nil)))
 
@@ -317,6 +338,7 @@
                           :req (req (= %2 side))
                           :value (req (- (constrain-value value -1000 1000) (get-in @%1 [%2 :hand-size :base])))})
         "/host"       command-host
+        "/install"     command-install
         "/install-ice" command-install-ice
         "/jack-out"   (fn [state side]
                         (when (and (= side :runner)
@@ -404,3 +426,12 @@
         "/undo-turn"  #(command-undo-turn %1 %2)
         "/unique"     #(command-unique %1 %2)
         nil))))
+
+(defn parse-and-perform-command
+  [state side user text]
+  (let [command (parse-command text)]
+    (when (and command
+               (not= side nil)
+               (not= side :spectator))
+      (command state side)
+      (swap! state update :log conj {:user nil :text (str "[!]" (:username user) " uses a command: " text)}))))

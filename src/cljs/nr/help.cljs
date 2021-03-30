@@ -69,6 +69,7 @@
                           [:li [:code "/end-run"] " - End the run (Corp only)"]
                           [:li [:code "/facedown"] " - Install a card facedown (Runner only)"]
                           [:li [:code "/handsize n"] " - Set your handsize to n"]
+                          [:li [:code "/install"] " - Install a card from hand"]
                           [:li [:code "/install-ice"] " - Install a piece of ICE at any position in a server (Corp only)"]
                           [:li [:code "/jack-out"] " - Jack out (Runner only)"]
                           [:li [:code "/link n"] " - Set your link to n"]
