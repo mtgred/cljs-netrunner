@@ -895,7 +895,7 @@
                                      {:prompt "Select the subroutine"
                                       :choices (req (unbroken-subroutines-choice ice))
                                       :msg (msg "resolve the subroutine (\"[subroutine] "
-                                                                                        target "\") from " (:title ice))
+                                                target "\") from " (:title ice))
                                       :async true
                                       :effect (req (let [sub (first (filter #(= target (make-label (:sub-effect %))) (:subroutines ice)))]
                                                      (continue-ability state side (:sub-effect sub) ice nil)))})
