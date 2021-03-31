@@ -1,8 +1,51 @@
 (ns game.core.diffs
-  (:require [game.core.flags :refer [card-is-public?]]
-            [game.core.card :refer [private-card]]
+  (:require [game.core.card :refer [agenda? installed? can-be-advanced? on-host? ice? program? upgrade? asset? rezzed?]]
+            [game.core.flags :refer [card-is-public? can-score?]]
             [game.utils :refer [dissoc-in]]
             [differ.core :as differ]))
+
+(defn action-list
+  [state card]
+  (cond-> []
+    ;; advance
+    (or (and (agenda? card)
+             (or (installed? card)
+                 (on-host? card)))
+        (can-be-advanced? card))
+    (conj "advance")
+    ;; score
+    (and (agenda? card)
+         (can-score? state :corp card))
+    (conj "score")
+    ;; trash
+    (or (ice? card)
+        (program? card))
+    (conj "trash")
+    ;; rez
+    (and (or (asset? card)
+             (ice? card)
+             (upgrade? card))
+         (not (rezzed? card)))
+    (conj "rez")
+    ;; derez
+    (and (or (asset? card)
+             (ice? card)
+             (upgrade? card))
+         (rezzed? card))
+    (conj "derez")))
+
+(defn card-summary
+  [state card]
+  (-> card
+      ; (select-keys [:cid :side :title :zone :counter :advance-counter :new :icon])
+      (assoc :hosted (mapv #(card-summary state %) (:hosted card))
+             :actions (action-list state card))))
+
+(defn private-card
+  "Returns only the public information of a given card when it's in a private state,
+  for example, when it's facedown or in the hand"
+  [card]
+  (select-keys card [:zone :cid :side :new :host :counter :advance-counter :hosted :icon]))
 
 (defn- strip [state]
   (-> state
@@ -28,7 +71,7 @@
   (mapv (fn [card]
           (cond
             (not (card-is-public? state side card)) (private-card card)
-            (:hosted card) (update-in card [:hosted] #(private-card-vector state side %))
+            (:hosted card) (update card :hosted #(private-card-vector state side %))
             :else card))
         cards))
 
@@ -60,20 +103,43 @@
         s
         (recur (update-in s (first z) #(private-card-vector state :corp %)) (rest z))))))
 
-(defn- make-deck-private-for-side [state side]
-  (let [view-deck (get-in @state [side :view-deck])
-        deck (get-in @state [side :deck])]
-    (-> (get @state side)
-        (assoc :deck (if view-deck deck []))
-        (assoc :deck-count (count (get-in @state [side :deck])))
-        (assoc :hand-count (count (get-in @state [side :hand]))))))
+(defn- make-player-runner [state]
+  (let [view-deck (get-in @state [:runner :view-deck])
+        deck (get-in @state [:runner :deck])
+        hand (get-in @state [:runner :hand])]
+    (-> (:runner @state)
+        (dissoc :runnable-list)
+        (assoc :hand (mapv (partial card-summary state) hand)
+               :deck (if view-deck deck [])
+               :deck-count (count deck)
+               :hand-count (count hand))
+        (update-in [:rig :hardware] #(mapv (partial card-summary state) %))
+        (update-in [:rig :program] #(mapv (partial card-summary state) %))
+        (update-in [:rig :resource] #(mapv (partial card-summary state) %)))))
+
+(defn- make-player-corp [state]
+  (let [view-deck (get-in @state [:corp :view-deck])
+        deck (get-in @state [:corp :deck])
+        hand (get-in @state [:corp :hand])]
+    (let [zones (mapcat #(do [[:servers % :content] [:servers % :ices]]) (keys (:servers (:corp @state))))
+          corp (-> (:corp @state)
+                   (assoc :hand (mapv (partial card-summary state) hand)
+                          :deck (if view-deck deck [])
+                          :deck-count (count deck)
+                          :hand-count (count hand)))]
+      (loop [s corp
+             z zones]
+        (if (empty? z)
+          s
+          (recur (update-in s (first z) #(mapv (partial card-summary state) %))
+                 (next z)))))))
 
 (defn- private-states
   "Generates privatized states for the Corp, Runner, any spectators, and the history from the base state.
   If `:spectatorhands` is on, all information is passed on to spectators as well."
   [state]
-  (let [corp-player (make-deck-private-for-side state :corp)
-        runner-player (make-deck-private-for-side state :runner)
+  (let [corp-player (make-player-corp state)
+        runner-player (make-player-runner state)
         corp-opponent (make-opponent-corp state)
         runner-opponent (make-opponent-runner state)]
     ;; corp, runner, spectator, history
