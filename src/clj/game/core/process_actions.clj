@@ -7,6 +7,7 @@
     [game.core.checkpoint :refer [fake-checkpoint]]
     [game.core.eid :refer [make-eid]]
     [game.core.moving :refer [trash]]
+    [game.core.pipeline :refer [continue-gp]]
     [game.core.rezzing :refer [derez rez]]
     [game.core.runs :refer [check-for-empty-server continue corp-phase-43 handle-end-run jack-out start-next-phase toggle-auto-no-action]]
     [game.core.say :refer [indicate-action system-msg]]
@@ -77,4 +78,5 @@
   (when-let [c (commands command)]
     (c state side args)
     (checkpoint+clean-up state)
+    (continue-gp state)
     true))

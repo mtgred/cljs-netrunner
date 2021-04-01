@@ -13,6 +13,7 @@
    end-turn
    events
    gameid
+   gp
    history
    log
    loser
@@ -52,11 +53,19 @@
 (defn new-state
   [gameid room now spectatorhands save-replay corp runner]
   (map->State
-    {:gameid gameid :log [] :active-player :runner :end-turn true
+    {:gameid gameid
+     :log []
+     :active-player :runner
+     :end-turn true
      :history []
      :room room
-     :rid 0 :turn 0 :eid 0
-     :sfx [] :sfx-current-id 0
+     :rid 0
+     :turn 0
+     :eid 0
+     :gp {:pipeline []
+          :queue []}
+     :sfx []
+     :sfx-current-id 0
      :stats {:time {:started now}}
      :start-date now
      :options {:spectatorhands spectatorhands

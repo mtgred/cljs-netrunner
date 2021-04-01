@@ -35,6 +35,7 @@
     [game.core.optional]
     [game.core.payment]
     [game.core.pick-counters]
+    [game.core.pipeline]
     [game.core.player]
     [game.core.play-instants]
     [game.core.process-actions]
@@ -573,6 +574,14 @@
   [game.core.pick-counters
    pick-credit-providing-cards
    pick-virus-counters-to-spend]
+
+  [game.core.pipeline
+   continue-gp
+   get-current-step
+   make-step
+   queue-step
+   update-current-step
+   ]
 
   [game.core.process-actions
    process-action]
