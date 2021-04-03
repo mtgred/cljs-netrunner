@@ -133,18 +133,19 @@
    :effect (effect (system-msg (str "trashes " (:title card)))
                    (trash eid card {:unpreventable true}))})
 
-(defn make-recurring-ability
-  [ability]
-  (if (:recurring ability)
-    (let [recurring-ability
-          {:msg "take 1 [Recurring Credits]"
-           :req (req (pos? (get-counters card :recurring)))
-           :async true
-           :effect (req (add-counter state side card :recurring -1)
-                        (wait-for (gain-credits state side 1)
-                                  (trigger-event-sync state side eid :spent-credits-from-card (get-card state card))))}]
-      (update ability :abilities #(conj (into [] %) recurring-ability)))
-    ability))
+(defn corp-recur
+  ([] (corp-recur (constantly true)))
+  ([pred]
+   {:label "add card from Archives to HQ"
+    :prompt "Select a card to add to HQ"
+    :show-discard true
+    :choices {:card #(and (corp? %)
+                       (in-discard? %)
+                       (pred %))}
+    :msg (msg "add " (card-str state target {:visible (faceup? target)}) " to HQ")
+    :effect (effect (move :corp target :hand))}))
+
+;; defcard support
 
 (defn trash-or-rfg
   [state _ eid card]
@@ -175,30 +176,44 @@
         (update ability :constant-effects #(conj (into [] %) constant-ab)))
       ability)))
 
+(defn make-recurring-ability
+  [ability]
+  (if (:recurring ability)
+    (let [recurring-ability
+          {:msg "take 1 [Recurring Credits]"
+           :req (req (pos? (get-counters card :recurring)))
+           :async true
+           :effect (req (add-counter state side card :recurring -1)
+                        (wait-for (gain-credits state side 1)
+                                  (trigger-event-sync state side eid :spent-credits-from-card (get-card state card))))}]
+      (update ability :abilities #(conj (into [] %) recurring-ability)))
+    ability))
+
+(defn assign-action
+  [ability]
+  (if (= :click (first (:cost ability)))
+    (assoc ability :action true)
+    ability))
+
+(defn make-click-abilities-actions
+  [ability]
+  (->> (:abilities ability)
+       (mapv assign-action)
+       (assoc ability :abilities)))
+
 (defn add-default-abilities
   [title ability]
   (->> ability
        (make-current-event-handler title)
-       (make-recurring-ability)))
-
-(defn corp-recur
-  ([] (corp-recur (constantly true)))
-  ([pred]
-   {:label "add card from Archives to HQ"
-    :prompt "Select a card to add to HQ"
-    :show-discard true
-    :choices {:card #(and (corp? %)
-                       (in-discard? %)
-                       (pred %))}
-    :msg (msg "add " (card-str state target {:visible (faceup? target)}) " to HQ")
-    :effect (effect (move :corp target :hand))}))
+       (make-recurring-ability)
+       (make-click-abilities-actions)))
 
 (def card-defs-cache (atom {}))
 
 (defmacro defcard
   [title ability]
   `(defmethod ~'defcard-impl ~title [~'_]
-     (if-let [cached-ability# (get card-defs-cache ~title)]
+     (if-let [cached-ability# (get @card-defs-cache ~title)]
        cached-ability#
        (let [ability# (add-default-abilities ~title ~ability)]
          (swap! card-defs-cache assoc ~title ability#)

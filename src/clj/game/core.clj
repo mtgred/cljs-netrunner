@@ -35,6 +35,7 @@
     [game.core.optional]
     [game.core.payment]
     [game.core.pick-counters]
+    [game.core.pipeline]
     [game.core.player]
     [game.core.play-instants]
     [game.core.process-actions]
@@ -197,7 +198,6 @@
    is-type?
    map->Card
    operation?
-   private-card
    program?
    protecting-archives?
    protecting-hq?
@@ -224,7 +224,8 @@
    command-counter
    command-undo-click
    command-undo-turn
-   parse-command]
+   parse-command
+   parse-and-perform-command]
 
   [game.core.cost-fns
    break-sub-ability-cost
@@ -574,8 +575,15 @@
    pick-credit-providing-cards
    pick-virus-counters-to-spend]
 
+  [game.core.pipeline
+   continue-gp
+   get-current-step
+   make-step
+   queue-step
+   update-current-step
+   ]
+
   [game.core.process-actions
-   command-parser
    process-action]
 
   [game.core.props

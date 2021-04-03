@@ -987,6 +987,7 @@
       (is (changes-credits (get-runner) 1
                            (take-credits state :corp)))
       (run-empty-server state :hq)
+      (click-prompt state :runner "No action")
       (take-credits state :runner)
       (play-from-hand state :corp "SEA Source")
       (click-prompt state :corp "0")
@@ -3745,17 +3746,21 @@
       (new-game {:runner {:deck [(qty "Penumbral Toolkit" 3)]}})
       (take-credits state :corp)
       (core/gain state :runner :click 1)
-      (changes-val-macro -2 (:credit (get-runner))
-                         "No cost reduction without run"
-                         (play-from-hand state :runner "Penumbral Toolkit"))
+      (changes-val-macro
+        -2 (:credit (get-runner))
+        "No cost reduction without run"
+        (play-from-hand state :runner "Penumbral Toolkit"))
       (run-empty-server state :rd)
-      (changes-val-macro -2 (:credit (get-runner))
-                         "No cost reduction after run on R&D"
-                         (play-from-hand state :runner "Penumbral Toolkit"))
+      (changes-val-macro
+        -2 (:credit (get-runner))
+        "No cost reduction after run on R&D"
+        (play-from-hand state :runner "Penumbral Toolkit"))
       (run-empty-server state :hq)
-      (changes-val-macro 0 (:credit (get-runner))
-                         "Cost reduction after run on HQ"
-                         (play-from-hand state :runner "Penumbral Toolkit"))
+      (click-prompt state :runner "No action")
+      (changes-val-macro
+        0 (:credit (get-runner))
+        "Cost reduction after run on HQ"
+        (play-from-hand state :runner "Penumbral Toolkit"))
       (is (= 3 (count (:rig (get-runner)))) "Installed all three cards")))
   (testing "Pay-credits prompt"
     (do-game
@@ -3766,16 +3771,18 @@
       (run-on state :hq)
       (let [pt (get-resource state 0)
             refr (get-program state 0)]
-        (changes-val-macro 2 (:credit (get-runner))
-                           "Took 2 credits off of Penumbral Toolkit the traditional way."
-                           (dotimes [_ 2]
-                             (card-ability state :runner (refresh pt) 0)))
-        (changes-val-macro 0 (:credit (get-runner))
-                           "Used 2 credits from Penumbral Toolkit"
-                           (card-ability state :runner refr 1)
-                           (click-card state :runner (refresh pt))
-                           (card-ability state :runner (refresh refr) 1)
-                           (click-card state :runner (refresh pt)))
+        (changes-val-macro
+          2 (:credit (get-runner))
+          "Took 2 credits off of Penumbral Toolkit the traditional way."
+          (dotimes [_ 2]
+            (card-ability state :runner (refresh pt) 0)))
+        (changes-val-macro
+          0 (:credit (get-runner))
+          "Used 2 credits from Penumbral Toolkit"
+          (card-ability state :runner refr 1)
+          (click-card state :runner (refresh pt))
+          (card-ability state :runner (refresh refr) 1)
+          (click-card state :runner (refresh pt)))
         (is (not-empty (:discard (get-runner))) "Empty Ghost Runner trashed")))))
 
 (deftest personal-workshop
