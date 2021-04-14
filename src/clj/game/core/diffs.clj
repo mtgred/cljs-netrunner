@@ -74,14 +74,14 @@
 
 (defn build-prompt-state
   [prompt]
-  (prune-null-fields
-    (select-keys prompt-keys prompt)))
+  (-> prompt
+      (select-keys prompt-keys)
+      (prune-null-fields)
+      (not-empty)))
 
 (defn prompt-summary
-  [player state side same-side?]
-  (-> player
-      (update :prompt #(if same-side? [(build-prompt-state (first %))] nil))
-      (update :prompt-state #(if same-side? (build-prompt-state %) nil))))
+  [player same-side?]
+  (update player :prompt-state #(if same-side? (build-prompt-state %) nil)))
 
 (def player-keys
   [:aid
@@ -102,7 +102,6 @@
    :keep
    :quote
    :register
-   :prompt
    :prompt-state
    :agenda-point
    :agenda-point-req])
@@ -116,7 +115,7 @@
       (update :rfg card-summary-vec state side)
       (update :scored card-summary-vec state side)
       (update :register select-keys [:spent-click])
-      (prompt-summary state side same-side?)
+      (prompt-summary same-side?)
       (prune-null-fields)))
 
 (def corp-keys

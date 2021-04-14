@@ -35,8 +35,8 @@
 (defmethod -msg-handler :default [event]
   (println "unknown event message" event))
 
-(defmethod -msg-handler :chsk/handshake [event]
-  nil)
+(defmethod -msg-handler :chsk/handshake [event] nil)
+(defmethod -msg-handler :chsk/ws-ping [event] nil)
 
 (defmethod -msg-handler :chsk/state
   [{[old-state new-state] :?data}]
