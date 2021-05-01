@@ -569,7 +569,7 @@
           [cond-button
            (tr [:lobby.start "Start"])
            (every? :deck players)
-           #(do(println @s)(ws/ws-send! [:netrunner/start @gameid]))])
+           #(do (ws/ws-send! [:netrunner/start @gameid]))])
         [:button {:on-click #(leave-lobby s)} (tr [:lobby.leave "Leave"])]
         (when (first-user? players @user)
           [:button {:on-click #(ws/ws-send! [:lobby/swap @gameid])} (tr [:lobby.swap "Swap sides"])])]
