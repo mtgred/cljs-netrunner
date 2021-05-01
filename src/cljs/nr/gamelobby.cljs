@@ -389,10 +389,7 @@
      [room-tab user s games "tournament" (tr [:lobby.tournament "Tournament"])]
      [room-tab user s games "angelarena" (tr [:lobby.angelarena "Angel Arena"])]
      [room-tab user s games "casual" (tr [:lobby.casual "Casual"])]]
-    (case (:room @s)
-      "angelarena"
-      [angelarena/lobby-buttons]
-
+    (when (not= "angelarena" (:room @s))
       [:div.lobby-buttons
        [cond-button (tr [:lobby.new-game "New game"])
         (and (not (or @gameid
@@ -416,12 +413,19 @@
                   empty?))
         #(do (replay-game s)
              (resume-sound))]])]
-   (let [password-game (some #(when (= @password-gameid (:gameid %)) %) @games)]
-     [game-list user {:password-game password-game
-                      :editing (:editing @s)
-                      :games games
-                      :gameid gameid
-                      :room (:room @s)}])])
+   (case (:room @s)
+     "angelarena"
+     [angelarena/game-list user {:editing (:editing @s)
+                                 :games games
+                                 :gameid gameid
+                                 :room (:room @s)}]
+
+     (let [password-game (some #(when (= @password-gameid (:gameid %)) %) @games)]
+       [game-list user {:password-game password-game
+                        :editing (:editing @s)
+                        :games games
+                        :gameid gameid
+                        :room (:room @s)}]))])
 
 (defn create-new-game
   [s user]
@@ -565,7 +569,7 @@
           [cond-button
            (tr [:lobby.start "Start"])
            (every? :deck players)
-           #(ws/ws-send! [:netrunner/start @gameid])])
+           #(do(println @s)(ws/ws-send! [:netrunner/start @gameid]))])
         [:button {:on-click #(leave-lobby s)} (tr [:lobby.leave "Leave"])]
         (when (first-user? players @user)
           [:button {:on-click #(ws/ws-send! [:lobby/swap @gameid])} (tr [:lobby.swap "Swap sides"])])]
