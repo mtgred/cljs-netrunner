@@ -416,8 +416,7 @@
              (resume-sound))]])]
    (case (:room @s)
      "angelarena"
-     [angelarena/game-list user {:editing (:editing @s)
-                                 :games games
+     [angelarena/game-list user {:games games
                                  :gameid gameid
                                  :room (:room @s)}]
 
@@ -570,7 +569,7 @@
           [cond-button
            (tr [:lobby.start "Start"])
            (every? :deck players)
-           #(do (ws/ws-send! [:netrunner/start @gameid]))])
+           #(ws/ws-send! [:netrunner/start @gameid])])
         [:button {:on-click #(leave-lobby s)} (tr [:lobby.leave "Leave"])]
         (when (first-user? players @user)
           [:button {:on-click #(ws/ws-send! [:lobby/swap @gameid])} (tr [:lobby.swap "Swap sides"])])]
@@ -639,7 +638,7 @@
 (defn right-panel
   [decks s games gameid password-gameid sets user]
   (if (= "angelarena" (:room @s))
-    [angelarena/game-panel decks s games gameid sets user]
+    [angelarena/game-panel decks s user]
     [:div.game-panel
      [create-new-game s user]
      [pending-game s decks games gameid password-gameid sets user]]))
