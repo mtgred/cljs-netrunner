@@ -23,3 +23,9 @@
        (.digest (MessageDigest/getInstance "MD5"))
        (BigInteger. 1)
        (format "%032x")))
+
+(defn average
+  [numbers]
+  (if (empty? numbers)
+    nil
+    (/ (reduce + numbers) (count numbers))))
