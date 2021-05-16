@@ -192,6 +192,7 @@
 
 (defn state-keys []
   [:active-player
+   :angelarena-info
    :corp
    :corp-phase-12
    :end-turn
