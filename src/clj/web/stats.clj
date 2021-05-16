@@ -1,9 +1,11 @@
 (ns web.stats
-  (:require [web.mongodb :refer [object-id]]
+  (:require [clojure.string :refer [lower-case]]
+            [web.mongodb :refer [object-id]]
             [monger.collection :as mc]
             [monger.result :refer [acknowledged?]]
             [monger.operators :refer :all]
             [monger.query :as mq]
+            [web.angel-arena.stats :as angel-arena-stats]
             [web.pages :as pages]
             [web.ws :as ws]
             [web.utils :refer [response json-response]]
@@ -175,7 +177,7 @@
      :history (:history @state)}))
 
 (defn game-finished
-  [db {:keys [state gameid]}]
+  [db {:keys [state gameid room] :as game}]
   (when state
     (try
       (mc/update db "game-logs"
@@ -198,6 +200,9 @@
                           :log (:log @state)}})
       (delete-old-replay db (get-in @state [:corp :user]))
       (delete-old-replay db (get-in @state [:corp :runner]))
+      (when (and (= "angel-arena" room)
+                 (:winner @state))
+        (angel-arena-stats/game-finished db game))
       (catch Exception e
         (println "Caught exception saving game stats: " (.getMessage e))
         (println "Stats: " (:stats @state))))))

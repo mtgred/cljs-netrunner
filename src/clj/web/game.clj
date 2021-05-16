@@ -110,6 +110,7 @@
                           :ending-players stripped-players
                           :start-date (java.util.Date.)
                           :last-update start-date
+                          :last-update-only-actions start-date
                           :state (core/init-game g))
                    (check-for-starter-decks g)
                    (update-in g [:players] #(mapv strip-deck %)))]
@@ -186,6 +187,7 @@
           (do
             (main/handle-action user command state (side-from-str side) args)
             (lobby/refresh-lobby-assoc-in gameid [:last-update] (t/now))
+            (lobby/refresh-lobby-assoc-in gameid [:last-update-only-actions] (t/now))
             (swap-and-send-diffs! game))
           (when-not spectator
             (println "handle-game-action unknown state or side")
