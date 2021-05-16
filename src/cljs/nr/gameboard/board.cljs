@@ -1159,6 +1159,9 @@
               (= "Concede" (capitalize reason))
               (tr [:game.win-conceded] turn)
 
+              (= "Claim" (capitalize reason))
+              (tr [:game.win-claimed] turn)
+
               :else
               (tr [:game.win-points] turn))]
            [:div (tr [:game.time-taken] time)]
