@@ -4,7 +4,7 @@
             [clojure.string :refer [join]]
             [jinteki.validator :refer [trusted-deck-status]]
             [jinteki.utils :refer [str->int superuser?]]
-            [nr.angelarena :as angelarena]
+            [nr.angel-arena :as angel-arena]
             [nr.appstate :refer [app-state]]
             [nr.ajax :refer [GET]]
             [nr.auth :refer [authenticated] :as auth]
@@ -81,7 +81,7 @@
 (defmethod ws/-msg-handler :lobby/select
   [{{:keys [gameid started state]} :?data}]
   (swap! app-state assoc :gameid gameid)
-  (reset! angelarena/queueing false)
+  (reset! angel-arena/queueing false)
   (when started
     (launch-game (parse-state state))))
 
@@ -388,9 +388,9 @@
    [:div.button-bar
     [:div.rooms
      [room-tab user s games "tournament" (tr [:lobby.tournament "Tournament"])]
-     [room-tab user s games "angelarena" (tr [:lobby.angelarena "Angel Arena"])]
+     [room-tab user s games "angel-arena" (tr [:lobby.angel-arena "Angel Arena"])]
      [room-tab user s games "casual" (tr [:lobby.casual "Casual"])]]
-    (when (not= "angelarena" (:room @s))
+    (when (not= "angel-arena" (:room @s))
       [:div.lobby-buttons
        [cond-button (tr [:lobby.new-game "New game"])
         (and (not (or @gameid
@@ -415,8 +415,8 @@
         #(do (replay-game s)
              (resume-sound))]])]
    (case (:room @s)
-     "angelarena"
-     [angelarena/game-list user {:games games
+     "angel-arena"
+     [angel-arena/game-list user {:games games
                                  :gameid gameid
                                  :room (:room @s)}]
 
@@ -637,8 +637,8 @@
 
 (defn right-panel
   [decks s games gameid password-gameid sets user]
-  (if (= "angelarena" (:room @s))
-    [angelarena/game-panel decks s user]
+  (if (= "angel-arena" (:room @s))
+    [angel-arena/game-panel decks s user]
     [:div.game-panel
      [create-new-game s user]
      [pending-game s decks games gameid password-gameid sets user]]))
